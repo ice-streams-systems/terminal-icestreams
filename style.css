@@ -518,12 +518,105 @@ html, body {
 /* ══════════════════════════════════════
    RESPONSIVE
 ══════════════════════════════════════ */
+/* ══════════════════════════════════════
+   MOBILE BAR & DRAWER  (hidden desktop)
+══════════════════════════════════════ */
+#mobile-bar {
+  display: none; /* shown only on mobile */
+  position: fixed;
+  top: var(--header-h); left: 0; right: 0;
+  z-index: 900;
+  background: rgba(10,12,16,0.98);
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: blur(10px);
+  height: 42px;
+  align-items: stretch;
+  flex-shrink: 0;
+}
+#mobile-tabs {
+  display: flex; flex: 1;
+}
+.mob-tab {
+  flex: 1; padding: 0;
+  background: transparent; border: none;
+  font-family: var(--font-ui); font-size: 0.75rem;
+  font-weight: 700; letter-spacing: 0.2em;
+  color: var(--dim); cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s, border-color 0.15s;
+}
+.mob-tab:hover  { color: var(--ice); }
+.mob-tab.active { color: var(--ice); border-bottom-color: var(--ice); }
+
+#mob-guide-controls {
+  display: flex; align-items: center;
+  gap: 10px; padding: 0 12px;
+  border-left: 1px solid var(--border);
+}
+#mob-guide-controls.hidden { display: none; }
+#mob-modules-btn {
+  background: transparent; border: 1px solid var(--border);
+  color: var(--ice); font-family: var(--font-ui);
+  font-size: 0.68rem; font-weight: 700; letter-spacing: 0.14em;
+  padding: 4px 10px; border-radius: 3px; cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, border-color 0.15s;
+}
+#mob-modules-btn:hover { background: rgba(168,216,234,0.08); border-color: var(--ice); }
+#mob-chevron { display: inline-block; transition: transform 0.2s ease; }
+#mob-drawer.open #mob-chevron { transform: rotate(180deg); }
+#mob-mission-progress {
+  font-size: 0.68rem; color: var(--dim);
+  white-space: nowrap; font-family: var(--font-ui);
+}
+
+/* Drawer — slides down from under mobile bar */
+#mob-drawer {
+  display: none; /* shown only on mobile */
+  position: fixed;
+  top: calc(var(--header-h) + 42px);
+  left: 0; right: 0;
+  z-index: 850;
+  background: rgba(10,12,16,0.98);
+  border-bottom: 1px solid var(--border);
+  max-height: 0; overflow: hidden;
+  transition: max-height 0.25s ease;
+}
+#mob-drawer.open { max-height: 60vh; overflow-y: auto; }
+
+/* Mission items inside mobile drawer — same classes, looser touch targets */
+#mob-mission-tree .module-head  { padding: 10px 16px 9px; font-size: 0.74rem; }
+#mob-mission-tree .mission-item { padding: 10px 16px; }
+#mob-mission-tree .mi-label     { font-size: 0.78rem; }
+
+/* ══════════════════════════════════════
+   RESPONSIVE
+══════════════════════════════════════ */
 @media (max-width: 720px) {
-  :root { --sidebar-w: 260px; }
-  #sidebar { display: none; }
-  #sidebar.mobile-open { display: flex; position: fixed; inset: var(--header-h) auto 0 0; z-index: 500; }
+  :root {
+    --mob-bar-h: 42px;
+  }
+
+  /* Hide desktop sidebar entirely */
+  #sidebar { display: none !important; }
+
+  /* Show mobile bar and drawer */
+  #mobile-bar { display: flex; }
+  #mob-drawer  { display: block; }
+
+  /* Push app layout down to clear header + mobile bar */
+  #app-layout {
+    top: calc(var(--header-h) + var(--mob-bar-h));
+  }
+
+  /* When drawer is open, push terminal area down so it's not covered */
+  body.drawer-open #app-layout {
+    top: calc(var(--header-h) + var(--mob-bar-h));
+  }
+
   .footer-note { display: none; }
 }
+
 @media (max-width: 480px) {
-  #term-input, .term-input-row, #term-output { font-size: 0.72rem; }
+  #term-input, .term-input-row, #term-output { font-size: 0.8rem; }
 }
