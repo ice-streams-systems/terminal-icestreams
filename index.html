@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ISS Terminal | Linux Learning Environment</title>
+  <meta name="description" content="Browser-based Linux terminal simulator. Learn navigation, file operations, text processing, permissions, and scripting in a safe sandboxed environment." />
+  <meta name="robots" content="index, follow" />
+  <link rel="canonical" href="https://terminal.icestreams.io/" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=JetBrains+Mono:wght@300;400;600&family=Crimson+Pro:ital,wght@0,400;1,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- Background layers -->
+  <canvas id="stream-canvas" aria-hidden="true"></canvas>
+  <div class="scanlines" aria-hidden="true"></div>
+  <div class="grain" aria-hidden="true"></div>
+
+  <!-- ── HEADER ── -->
+  <header id="site-header">
+    <div class="header-inner">
+      <a href="https://icestreams.io" class="back-link" title="Back to icestreams.io">
+        <span class="back-arrow">←</span>
+        <span class="back-text">icestreams.io</span>
+      </a>
+      <div class="wordmark">
+        <span class="wm-iss">ISS</span>
+        <span class="wm-sep">//</span>
+        <span class="wm-term">TERMINAL</span>
+      </div>
+      <div class="header-status">
+        <span class="status-dot" id="status-dot"></span>
+        <span class="status-text" id="status-text">READY</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ── APP LAYOUT ── -->
+  <div id="app-layout">
+
+    <!-- ── SIDEBAR ── -->
+    <aside id="sidebar">
+
+      <div class="mode-toggle" role="tablist" aria-label="Terminal mode">
+        <button class="mode-btn active" id="btn-free"  role="tab" aria-selected="true">FREE</button>
+        <button class="mode-btn"        id="btn-guide" role="tab" aria-selected="false">GUIDED</button>
+      </div>
+
+      <!-- FREE MODE: command reference -->
+      <div id="panel-free" class="side-panel">
+        <div class="ref-section">
+          <div class="ref-head">Navigation</div>
+          <div class="ref-grid">
+            <span class="ref-cmd">pwd</span>      <span class="ref-desc">print working directory</span>
+            <span class="ref-cmd">ls</span>       <span class="ref-desc">list directory contents</span>
+            <span class="ref-cmd">ls -la</span>   <span class="ref-desc">list with details + hidden</span>
+            <span class="ref-cmd">cd &lt;dir&gt;</span> <span class="ref-desc">change directory</span>
+            <span class="ref-cmd">cd ..</span>    <span class="ref-desc">go up one level</span>
+            <span class="ref-cmd">cd ~</span>     <span class="ref-desc">go to home directory</span>
+          </div>
+        </div>
+        <div class="ref-section">
+          <div class="ref-head">Files</div>
+          <div class="ref-grid">
+            <span class="ref-cmd">cat &lt;file&gt;</span>   <span class="ref-desc">display file contents</span>
+            <span class="ref-cmd">touch &lt;file&gt;</span> <span class="ref-desc">create empty file</span>
+            <span class="ref-cmd">mkdir &lt;dir&gt;</span>  <span class="ref-desc">create directory</span>
+            <span class="ref-cmd">cp src dst</span>         <span class="ref-desc">copy file</span>
+            <span class="ref-cmd">mv src dst</span>         <span class="ref-desc">move or rename</span>
+            <span class="ref-cmd">rm &lt;file&gt;</span>    <span class="ref-desc">remove file</span>
+            <span class="ref-cmd">rm -r &lt;dir&gt;</span>  <span class="ref-desc">remove directory</span>
+          </div>
+        </div>
+        <div class="ref-section">
+          <div class="ref-head">Text</div>
+          <div class="ref-grid">
+            <span class="ref-cmd">grep pat f</span>  <span class="ref-desc">search file for pattern</span>
+            <span class="ref-cmd">head -n5 f</span>  <span class="ref-desc">first N lines</span>
+            <span class="ref-cmd">tail -n5 f</span>  <span class="ref-desc">last N lines</span>
+            <span class="ref-cmd">wc -l f</span>     <span class="ref-desc">count lines</span>
+            <span class="ref-cmd">sort f</span>      <span class="ref-desc">sort lines</span>
+            <span class="ref-cmd">cmd1 | cmd2</span> <span class="ref-desc">pipe output to command</span>
+            <span class="ref-cmd">echo x &gt; f</span> <span class="ref-desc">write to file</span>
+            <span class="ref-cmd">echo x &gt;&gt; f</span><span class="ref-desc">append to file</span>
+          </div>
+        </div>
+        <div class="ref-section">
+          <div class="ref-head">Permissions</div>
+          <div class="ref-grid">
+            <span class="ref-cmd">whoami</span>         <span class="ref-desc">current user</span>
+            <span class="ref-cmd">id</span>             <span class="ref-desc">user and group IDs</span>
+            <span class="ref-cmd">chmod +x f</span>     <span class="ref-desc">make executable</span>
+            <span class="ref-cmd">chmod 644 f</span>    <span class="ref-desc">set octal permissions</span>
+          </div>
+        </div>
+        <div class="ref-section">
+          <div class="ref-head">Variables</div>
+          <div class="ref-grid">
+            <span class="ref-cmd">X=value</span>         <span class="ref-desc">assign (no spaces!)</span>
+            <span class="ref-cmd">echo $X</span>         <span class="ref-desc">expand variable</span>
+            <span class="ref-cmd">echo "$X"</span>       <span class="ref-desc">quoted expansion (safe)</span>
+            <span class="ref-cmd">${X:-default}</span>   <span class="ref-desc">value or default if unset</span>
+            <span class="ref-cmd">${X:=val}</span>       <span class="ref-desc">assign if unset, then expand</span>
+            <span class="ref-cmd">${#X}</span>           <span class="ref-desc">string length of X</span>
+            <span class="ref-cmd">${X:2:4}</span>        <span class="ref-desc">substring offset 2 length 4</span>
+            <span class="ref-cmd">${X//old/new}</span>  <span class="ref-desc">replace all occurrences</span>
+            <span class="ref-cmd">${X#pat}</span>        <span class="ref-desc">strip shortest prefix match</span>
+            <span class="ref-cmd">${X%pat}</span>        <span class="ref-desc">strip shortest suffix match</span>
+            <span class="ref-cmd">${X^^}</span>          <span class="ref-desc">uppercase X</span>
+            <span class="ref-cmd">${X,,}</span>          <span class="ref-desc">lowercase X</span>
+            <span class="ref-cmd">readonly X=v</span>    <span class="ref-desc">make variable read-only</span>
+            <span class="ref-cmd">declare -i N</span>    <span class="ref-desc">declare integer variable</span>
+            <span class="ref-cmd">declare -r X</span>    <span class="ref-desc">declare read-only</span>
+            <span class="ref-cmd">declare -x X</span>    <span class="ref-desc">export to environment</span>
+            <span class="ref-cmd">export X</span>        <span class="ref-desc">export variable</span>
+          </div>
+        </div>
+        <div class="ref-section">
+          <div class="ref-head">Special Variables</div>
+          <div class="ref-grid">
+            <span class="ref-cmd">$?</span>    <span class="ref-desc">exit status of last command</span>
+            <span class="ref-cmd">$$</span>    <span class="ref-desc">PID of current shell</span>
+            <span class="ref-cmd">$0</span>    <span class="ref-desc">script name</span>
+            <span class="ref-cmd">$1 $2 …</span> <span class="ref-desc">positional parameters</span>
+            <span class="ref-cmd">$#</span>    <span class="ref-desc">number of arguments</span>
+            <span class="ref-cmd">$@</span>    <span class="ref-desc">all arguments (separate words)</span>
+            <span class="ref-cmd">$*</span>    <span class="ref-desc">all arguments (one word)</span>
+          </div>
+        </div>
+        <div class="ref-section">
+          <div class="ref-head">Quoting</div>
+          <div class="ref-grid">
+            <span class="ref-cmd">'literal'</span>   <span class="ref-desc">no expansion inside</span>
+            <span class="ref-cmd">"double"</span>    <span class="ref-desc">variables/cmdsub expand inside</span>
+            <span class="ref-cmd">$'c\tn'</span>     <span class="ref-desc">ANSI-C quoting (tabs, newlines)</span>
+            <span class="ref-cmd">\char</span>       <span class="ref-desc">escape single character</span>
+          </div>
+        </div>
+        <div class="ref-section">
+          <div class="ref-head">Arithmetic</div>
+          <div class="ref-grid">
+            <span class="ref-cmd">$(( 3 + 4 ))</span>   <span class="ref-desc">arithmetic expansion</span>
+            <span class="ref-cmd">let N=5*2</span>       <span class="ref-desc">arithmetic assignment</span>
+            <span class="ref-cmd">expr 5 \* 2</span>     <span class="ref-desc">external arithmetic</span>
+            <span class="ref-cmd">$(( N++ ))</span>      <span class="ref-desc">post-increment</span>
+            <span class="ref-cmd">$(( N % 3 ))</span>    <span class="ref-desc">modulo</span>
+            <span class="ref-cmd">$(( N ** 2 ))</span>   <span class="ref-desc">exponentiation</span>
+            <span class="ref-cmd">printf "%.2f" …</span> <span class="ref-desc">floating point output</span>
+          </div>
+        </div>
+        <div class="ref-section">
+          <div class="ref-head">Tests &amp; Conditions</div>
+          <div class="ref-grid">
+            <span class="ref-cmd">[ -f file ]</span>    <span class="ref-desc">file exists and is regular</span>
+            <span class="ref-cmd">[ -d dir ]</span>     <span class="ref-desc">directory exists</span>
+            <span class="ref-cmd">[ -e path ]</span>    <span class="ref-desc">path exists (any type)</span>
+            <span class="ref-cmd">[ -r f ]</span>       <span class="ref-desc">file is readable</span>
+            <span class="ref-cmd">[ -x f ]</span>       <span class="ref-desc">file is executable</span>
+            <span class="ref-cmd">[ -s f ]</span>       <span class="ref-desc">file non-empty</span>
+            <span class="ref-cmd">[ -z "$X" ]</span>    <span class="ref-desc">string is empty</span>
+            <span class="ref-cmd">[ -n "$X" ]</span>    <span class="ref-desc">string is non-empty</span>
+            <span class="ref-cmd">[ "$a" = "$b" ]</span> <span class="ref-desc">string equality</span>
+            <span class="ref-cmd">[ "$a" != "$b"]</span> <span class="ref-desc">string inequality</span>
+            <span class="ref-cmd">[ $N -eq 0 ]</span>   <span class="ref-desc">numeric equal</span>
+            <span class="ref-cmd">[ $N -lt 10 ]</span>  <span class="ref-desc">numeric less-than</span>
+            <span class="ref-cmd">[ $N -ge 5 ]</span>   <span class="ref-desc">numeric greater-or-equal</span>
+            <span class="ref-cmd">[[ $X =~ pat ]]</span> <span class="ref-desc">regex match</span>
+            <span class="ref-cmd">cmd1 &amp;&amp; cmd2</span>  <span class="ref-desc">run cmd2 only if cmd1 succeeds</span>
+            <span class="ref-cmd">cmd1 || cmd2</span>  <span class="ref-desc">run cmd2 only if cmd1 fails</span>
+          </div>
+        </div>
+        <div class="ref-section">
+          <div class="ref-head">Control Flow</div>
+          <div class="ref-grid">
+            <span class="ref-cmd">if [ … ]; then<br>&nbsp;&nbsp;cmds<br>elif [ … ]; then<br>&nbsp;&nbsp;cmds<br>else<br>&nbsp;&nbsp;cmds<br>fi</span>
+                                                         <span class="ref-desc">if / elif / else</span>
+            <span class="ref-cmd">for x in a b c; do<br>&nbsp;&nbsp;echo $x<br>done</span>
+                                                         <span class="ref-desc">for-in loop</span>
+            <span class="ref-cmd">for (( i=0; i&lt;5; i++ )); do<br>&nbsp;&nbsp;echo $i<br>done</span>
+                                                         <span class="ref-desc">C-style for loop</span>
+            <span class="ref-cmd">while [ cond ]; do<br>&nbsp;&nbsp;cmds<br>done</span>
+                                                         <span class="ref-desc">while loop</span>
+            <span class="ref-cmd">until [ cond ]; do<br>&nbsp;&nbsp;cmds<br>done</span>
+                                                         <span class="ref-desc">until loop</span>
+            <span class="ref-cmd">case $X in<br>&nbsp;a) cmd;;<br>&nbsp;b) cmd;;<br>&nbsp;*) cmd;;<br>esac</span>
+                                                         <span class="ref-desc">case statement</span>
+            <span class="ref-cmd">break</span>          <span class="ref-desc">exit loop</span>
+            <span class="ref-cmd">continue</span>       <span class="ref-desc">skip to next iteration</span>
+          </div>
+        </div>
+        <div class="ref-section">
+          <div class="ref-head">Functions</div>
+          <div class="ref-grid">
+            <span class="ref-cmd">greet() {<br>&nbsp;&nbsp;echo "Hello $1"<br>}</span>
+                                                         <span class="ref-desc">define function</span>
+            <span class="ref-cmd">greet "World"</span>   <span class="ref-desc">call function</span>
+            <span class="ref-cmd">local X=val</span>     <span class="ref-desc">local variable (inside func)</span>
+            <span class="ref-cmd">return 0</span>        <span class="ref-desc">exit function with status</span>
+          </div>
+        </div>
+        <div class="ref-section">
+          <div class="ref-head">Arrays</div>
+          <div class="ref-grid">
+            <span class="ref-cmd">A=(a b c)</span>        <span class="ref-desc">create array</span>
+            <span class="ref-cmd">${A[0]}</span>          <span class="ref-desc">first element</span>
+            <span class="ref-cmd">${A[@]}</span>          <span class="ref-desc">all elements</span>
+            <span class="ref-cmd">${#A[@]}</span>         <span class="ref-desc">array length</span>
+            <span class="ref-cmd">A+=(d e)</span>         <span class="ref-desc">append elements</span>
+            <span class="ref-cmd">for x in "${A[@]}"; do …</span> <span class="ref-desc">iterate array</span>
+          </div>
+        </div>
+        <div class="ref-section">
+          <div class="ref-head">I/O &amp; Redirection</div>
+          <div class="ref-grid">
+            <span class="ref-cmd">cmd &gt; file</span>    <span class="ref-desc">stdout to file (overwrite)</span>
+            <span class="ref-cmd">cmd &gt;&gt; file</span>   <span class="ref-desc">stdout to file (append)</span>
+            <span class="ref-cmd">cmd &lt; file</span>    <span class="ref-desc">stdin from file</span>
+            <span class="ref-cmd">cmd 2&gt; err</span>    <span class="ref-desc">stderr to file</span>
+            <span class="ref-cmd">cmd 2&gt;&amp;1</span>      <span class="ref-desc">stderr → stdout</span>
+            <span class="ref-cmd">cmd1 | cmd2</span>   <span class="ref-desc">pipe stdout to stdin</span>
+            <span class="ref-cmd">cmd | tee f</span>   <span class="ref-desc">stdout to file and screen</span>
+            <span class="ref-cmd">cat &lt;&lt; EOF<br>&nbsp;&nbsp;text<br>EOF</span>
+                                                         <span class="ref-desc">here document</span>
+          </div>
+        </div>
+        <div class="ref-section">
+          <div class="ref-head">Command Substitution</div>
+          <div class="ref-grid">
+            <span class="ref-cmd">$(command)</span>       <span class="ref-desc">capture command output</span>
+            <span class="ref-cmd">X=$(date)</span>        <span class="ref-desc">assign output to variable</span>
+            <span class="ref-cmd">echo "Today: $(date)"</span> <span class="ref-desc">inline substitution</span>
+          </div>
+        </div>
+        <div class="ref-section">
+          <div class="ref-head">Text Tools</div>
+          <div class="ref-grid">
+            <span class="ref-cmd">grep -n pat f</span>   <span class="ref-desc">show line numbers</span>
+            <span class="ref-cmd">grep -v pat f</span>   <span class="ref-desc">invert match</span>
+            <span class="ref-cmd">grep -c pat f</span>   <span class="ref-desc">count matching lines</span>
+            <span class="ref-cmd">sed 's/a/b/g' f</span> <span class="ref-desc">replace a→b globally</span>
+            <span class="ref-cmd">sed '/pat/d' f</span>  <span class="ref-desc">delete matching lines</span>
+            <span class="ref-cmd">awk '{print $2}' f</span> <span class="ref-desc">print 2nd field</span>
+            <span class="ref-cmd">awk '/pat/{print}' f</span> <span class="ref-desc">print matching lines</span>
+            <span class="ref-cmd">tr 'a-z' 'A-Z'</span>  <span class="ref-desc">translate chars</span>
+            <span class="ref-cmd">sort -u</span>         <span class="ref-desc">sort and deduplicate</span>
+            <span class="ref-cmd">sort -n</span>         <span class="ref-desc">numeric sort</span>
+            <span class="ref-cmd">sort -rn</span>        <span class="ref-desc">reverse numeric sort</span>
+            <span class="ref-cmd">uniq -c</span>         <span class="ref-desc">count occurrences</span>
+            <span class="ref-cmd">cut -d: -f1</span>     <span class="ref-desc">cut field 1 (colon delim)</span>
+            <span class="ref-cmd">basename path</span>   <span class="ref-desc">filename from path</span>
+            <span class="ref-cmd">dirname path</span>    <span class="ref-desc">directory from path</span>
+            <span class="ref-cmd">printf "%s\n" x</span> <span class="ref-desc">formatted output</span>
+          </div>
+        </div>
+        <div class="ref-section">
+          <div class="ref-head">Script Best Practices</div>
+          <div class="ref-grid">
+            <span class="ref-cmd">#!/bin/bash</span>     <span class="ref-desc">shebang — always first line</span>
+            <span class="ref-cmd">set -euo pipefail</span> <span class="ref-desc">strict mode (exit on error)</span>
+            <span class="ref-cmd">set -x</span>          <span class="ref-desc">trace / debug mode</span>
+            <span class="ref-cmd">set +x</span>          <span class="ref-desc">disable trace</span>
+            <span class="ref-cmd"># comment</span>       <span class="ref-desc">comment line</span>
+            <span class="ref-cmd">exit 0</span>          <span class="ref-desc">exit script with status</span>
+            <span class="ref-cmd">trap 'cleanup' EXIT</span> <span class="ref-desc">run on exit</span>
+            <span class="ref-cmd">type cmd</span>        <span class="ref-desc">check what cmd resolves to</span>
+            <span class="ref-cmd">source file.sh</span>  <span class="ref-desc">run file in current shell</span>
+          </div>
+        </div>
+        <div class="ref-section">
+          <div class="ref-head">Awk</div>
+          <div class="ref-grid">
+            <span class="ref-cmd">awk '{print $1}'</span>  <span class="ref-desc">print first field of each line</span>
+            <span class="ref-cmd">awk '{print $NF}'</span> <span class="ref-desc">print last field</span>
+            <span class="ref-cmd">awk '{print NR, $0}'</span> <span class="ref-desc">print line number + line</span>
+            <span class="ref-cmd">awk -F, '{print $2}'</span> <span class="ref-desc">comma-separated (CSV)</span>
+            <span class="ref-cmd">awk -F: '{print $1}'</span> <span class="ref-desc">colon-separated (/etc/passwd)</span>
+            <span class="ref-cmd">awk '/pattern/{print}'</span> <span class="ref-desc">print matching lines</span>
+            <span class="ref-cmd">awk '!/pat/{print}'</span>  <span class="ref-desc">print non-matching lines</span>
+            <span class="ref-cmd">awk 'NR==3'</span>         <span class="ref-desc">print line 3</span>
+            <span class="ref-cmd">awk 'NR>1'</span>          <span class="ref-desc">skip header line</span>
+            <span class="ref-cmd">awk '{sum+=$3} END{print sum}'</span> <span class="ref-desc">sum a column</span>
+            <span class="ref-cmd">awk '{count++} END{print count}'</span> <span class="ref-desc">count lines</span>
+            <span class="ref-cmd">awk 'BEGIN{FS=","}{print $1}'</span> <span class="ref-desc">set FS in BEGIN block</span>
+            <span class="ref-cmd">awk '/err/{c++} END{print c}'</span> <span class="ref-desc">count matching lines</span>
+          </div>
+        </div>
+        <div class="ref-section">
+          <div class="ref-head">Make</div>
+          <div class="ref-grid">
+            <span class="ref-cmd">make</span>             <span class="ref-desc">run default (first) target</span>
+            <span class="ref-cmd">make all</span>         <span class="ref-desc">run "all" target explicitly</span>
+            <span class="ref-cmd">make clean</span>       <span class="ref-desc">remove build artifacts</span>
+            <span class="ref-cmd">make install</span>     <span class="ref-desc">install to system paths</span>
+            <span class="ref-cmd">make test</span>        <span class="ref-desc">run test suite</span>
+            <span class="ref-cmd">make -n</span>          <span class="ref-desc">dry run — show commands only</span>
+            <span class="ref-cmd">make VAR=val</span>     <span class="ref-desc">override a Makefile variable</span>
+          </div>
+        </div>
+        <div class="ref-section">
+          <div class="ref-head">Makefile Syntax</div>
+          <div class="ref-grid">
+            <span class="ref-cmd">VAR = value</span>      <span class="ref-desc">variable assignment</span>
+            <span class="ref-cmd">$(VAR)</span>           <span class="ref-desc">expand variable</span>
+            <span class="ref-cmd">target: deps<br>&nbsp;&nbsp;&lt;TAB&gt;recipe</span> <span class="ref-desc">rule (tab required!)</span>
+            <span class="ref-cmd">.PHONY: all clean</span> <span class="ref-desc">declare non-file targets</span>
+            <span class="ref-cmd">@echo text</span>       <span class="ref-desc">@ suppresses command echo</span>
+            <span class="ref-cmd">$@</span>               <span class="ref-desc">target name (automatic var)</span>
+            <span class="ref-cmd">$&lt;</span>               <span class="ref-desc">first prerequisite</span>
+            <span class="ref-cmd">%.o: %.c</span>         <span class="ref-desc">pattern rule</span>
+          </div>
+        </div>
+        <div class="ref-section">
+          <div class="ref-head">Package Management</div>
+          <div class="ref-grid">
+            <span class="ref-cmd">apt update</span>          <span class="ref-desc">refresh package index</span>
+            <span class="ref-cmd">apt upgrade</span>         <span class="ref-desc">upgrade installed packages</span>
+            <span class="ref-cmd">apt install pkg</span>     <span class="ref-desc">install package</span>
+            <span class="ref-cmd">apt install -y pkg</span>  <span class="ref-desc">install without confirmation</span>
+            <span class="ref-cmd">apt remove pkg</span>      <span class="ref-desc">remove package (keep config)</span>
+            <span class="ref-cmd">apt purge pkg</span>       <span class="ref-desc">remove package + config</span>
+            <span class="ref-cmd">apt search term</span>     <span class="ref-desc">search package names/desc</span>
+            <span class="ref-cmd">apt show pkg</span>        <span class="ref-desc">show package details</span>
+            <span class="ref-cmd">apt list --installed</span> <span class="ref-desc">list installed packages</span>
+            <span class="ref-cmd">dpkg -l</span>             <span class="ref-desc">low-level list of installed</span>
+            <span class="ref-cmd">dpkg -s pkg</span>         <span class="ref-desc">package status + details</span>
+            <span class="ref-cmd">dpkg -L pkg</span>         <span class="ref-desc">files installed by package</span>
+          </div>
+        </div>
+        <div class="ref-section">
+          <div class="ref-head">Environment &amp; PATH</div>
+          <div class="ref-grid">
+            <span class="ref-cmd">env</span>                  <span class="ref-desc">show full environment</span>
+            <span class="ref-cmd">echo $PATH</span>           <span class="ref-desc">show PATH value</span>
+            <span class="ref-cmd">which cmd</span>            <span class="ref-desc">find binary for command</span>
+            <span class="ref-cmd">type cmd</span>             <span class="ref-desc">alias/function/binary?</span>
+            <span class="ref-cmd">export VAR=val</span>       <span class="ref-desc">set + export to environment</span>
+            <span class="ref-cmd">export VAR</span>           <span class="ref-desc">export existing variable</span>
+            <span class="ref-cmd">unset VAR</span>            <span class="ref-desc">remove variable</span>
+            <span class="ref-cmd">export PATH="$HOME/bin:$PATH"</span> <span class="ref-desc">prepend to PATH</span>
+            <span class="ref-cmd">source ~/.bashrc</span>     <span class="ref-desc">reload shell config</span>
+            <span class="ref-cmd">. ~/.bashrc</span>          <span class="ref-desc">same as source</span>
+            <span class="ref-cmd">env | grep VAR</span>       <span class="ref-desc">find a specific variable</span>
+          </div>
+        </div>
+        <div class="ref-tip">
+          <span class="tip-label">TIPS</span>
+          <span>↑/↓ history &nbsp;·&nbsp; Tab completion &nbsp;·&nbsp; Ctrl+L clear &nbsp;·&nbsp; cat scripts/ to read examples</span>
+        </div>
+      </div>
+
+      <!-- GUIDED MODE: mission tree -->
+      <div id="panel-guide" class="side-panel hidden">
+        <div class="guide-header">
+          <span class="guide-progress-label">Progress</span>
+          <span class="guide-progress-val" id="guide-progress">0 / 131</span>
+        </div>
+        <div id="mission-tree"><!-- rendered by script.js --></div>
+      </div>
+
+    </aside>
+
+    <!-- ── TERMINAL AREA ── -->
+    <div id="terminal-area">
+
+      <!-- Mission HUD (guided mode only) -->
+      <div id="mission-hud" class="hidden" role="status" aria-live="polite">
+        <div class="hud-inner">
+          <div class="hud-meta">
+            <span class="hud-id"   id="hud-id"></span>
+            <span class="hud-title" id="hud-title"></span>
+          </div>
+          <div class="hud-obj" id="hud-obj"></div>
+          <div class="hud-actions">
+            <button class="hud-hint-btn" id="hud-hint-btn">[ HINT ]</button>
+            <div class="hud-hint" id="hud-hint"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mission success overlay -->
+      <div id="mission-success" class="hidden" role="alert">
+        <div class="ms-inner">
+          <div class="ms-signal">[ OBJECTIVE COMPLETE ]</div>
+          <div class="ms-msg" id="ms-msg"></div>
+          <div class="ms-actions">
+            <button class="ms-next" id="ms-next">Next Mission →</button>
+            <button class="ms-free" id="ms-dismiss">Continue in terminal</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Vim editor overlay -->
+      <div id="vim-overlay" class="hidden" role="dialog" aria-label="Vim text editor">
+        <div id="vim-topbar">
+          <span class="vim-filename" id="vim-filename"></span>
+          <span class="vim-keyhints">i=insert &nbsp;·&nbsp; Esc=normal &nbsp;·&nbsp; :w=save &nbsp;·&nbsp; :q=quit &nbsp;·&nbsp; :wq=save+quit</span>
+        </div>
+        <div id="vim-editor-area">
+          <div id="vim-lines"></div>
+        </div>
+        <div id="vim-statusbar">
+          <span class="vim-mode" id="vim-mode">-- NORMAL --</span>
+          <span class="vim-fileinfo" id="vim-fileinfo"></span>
+        </div>
+        <div id="vim-cmdbar">
+          <span class="vim-cmdprompt" id="vim-cmdprompt"></span><span class="vim-cmdtext" id="vim-cmdtext"></span>
+        </div>
+      </div>
+
+      <!-- The terminal itself -->
+      <div id="terminal-wrap" tabindex="0" aria-label="Linux terminal">
+        <div id="term-output" aria-live="polite" aria-atomic="false"></div>
+        <div class="term-input-row" id="term-input-row">
+          <span class="ps1" id="ps1-display"></span>
+          <input
+            type="text"
+            id="term-input"
+            autocomplete="off"
+            autocorrect="off"
+            autocapitalize="off"
+            spellcheck="false"
+            aria-label="Terminal input"
+          />
+        </div>
+      </div>
+
+    </div><!-- end terminal-area -->
+
+  </div><!-- end app-layout -->
+
+  <!-- ── FOOTER ── -->
+  <footer id="site-footer">
+    <div class="footer-inner">
+      <span class="footer-mark">ISS // TERMINAL</span>
+      <span class="footer-note">Sandboxed environment — no real system access</span>
+      <span class="footer-copy">© 2025 Ice Streams Systems</span>
+    </div>
+  </footer>
+
+  <script src="terminal.js"></script>
+  <script src="curriculum.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
