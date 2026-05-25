@@ -1,4 +1,4 @@
-# ISS Terminal — terminal.icestreams.io
+# ISS Terminal | terminal.icestreams.io
 
 Browser-based Linux learning environment. Simulated filesystem, 55+ commands, full scripting engine, and 105 guided missions across 24 modules covering bash scripting, awk, make, package management, and environment configuration.
 
