@@ -28,6 +28,48 @@
   const successMsg  = document.getElementById('ms-msg');
   const btnNext     = document.getElementById('ms-next');
   const btnDismiss  = document.getElementById('ms-dismiss');
+
+  /* ── Mobile bar refs ── */
+  const mobBtnFree      = document.getElementById('mob-btn-free');
+  const mobBtnGuide     = document.getElementById('mob-btn-guide');
+  const mobGuideCtrl    = document.getElementById('mob-guide-controls');
+  const mobModulesBtn   = document.getElementById('mob-modules-btn');
+  const mobDrawer       = document.getElementById('mob-drawer');
+  const mobMissionTree  = document.getElementById('mob-mission-tree');
+  const mobProgress     = document.getElementById('mob-mission-progress');
+
+  /* ── Mobile drawer toggle ── */
+  let drawerOpen = false;
+  function setDrawer(open) {
+    drawerOpen = open;
+    mobDrawer.classList.toggle('open', open);
+    const chevron = document.getElementById('mob-chevron');
+    if (chevron) chevron.textContent = open ? '▴' : '▾';
+  }
+  mobModulesBtn && mobModulesBtn.addEventListener('click', () => setDrawer(!drawerOpen));
+
+  // Close drawer when a mission is tapped
+  document.addEventListener('click', (e) => {
+    if (drawerOpen && e.target.closest('.mission-item') && e.target.closest('#mob-mission-tree')) {
+      setDrawer(false);
+    }
+  });
+
+  /* ── Mobile mode switching ── */
+  function syncMobTabs(m) {
+    if (!mobBtnFree) return;
+    mobBtnFree.classList.toggle('active', m === 'free');
+    mobBtnGuide.classList.toggle('active', m === 'guided');
+    mobGuideCtrl.classList.toggle('hidden', m !== 'guided');
+    if (m !== 'guided') setDrawer(false);
+  }
+
+  mobBtnFree && mobBtnFree.addEventListener('click', () => {
+    btnFree.click(); // delegate to desktop button
+  });
+  mobBtnGuide && mobBtnGuide.addEventListener('click', () => {
+    btnGuide.click(); // delegate to desktop button
+  });
   const guideProgress = document.getElementById('guide-progress');
 
   /* ── State ── */
@@ -516,6 +558,7 @@
     panelFree.classList.remove('hidden');
     panelGuide.classList.add('hidden');
     missionHud.classList.add('hidden');
+    syncMobTabs('free');
     termInput.focus();
   });
 
@@ -528,6 +571,7 @@
     buildMissionTree();
     if (!currentMission) selectMission(0);
     else showHUD(currentMission);
+    syncMobTabs('guided');
     termInput.focus();
   });
 
@@ -607,6 +651,27 @@
     });
 
     guideProgress.textContent = `${completed.size} / ${CURRICULUM.length}`;
+
+    // Mirror into mobile drawer
+    if (mobMissionTree) {
+      mobMissionTree.innerHTML = '';
+      missionTree.querySelectorAll('.mission-module').forEach(mod => {
+        const clone = mod.cloneNode(true);
+        mobMissionTree.appendChild(clone);
+        // collapsible headers
+        clone.querySelector('.module-head').addEventListener('click', () => {
+          clone.classList.toggle('open');
+        });
+        // mission item clicks
+        clone.querySelectorAll('.mission-item').forEach(item => {
+          item.addEventListener('click', () => {
+            const idx = CURRICULUM.findIndex(x => x.id === item.dataset.id);
+            if (idx !== -1) { selectMission(idx); setDrawer(false); }
+          });
+        });
+      });
+      if (mobProgress) mobProgress.textContent = `${completed.size} / ${CURRICULUM.length}`;
+    }
   }
 
   function selectMission(idx) {
